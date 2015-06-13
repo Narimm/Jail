@@ -49,7 +49,6 @@ public class JailMain extends JavaPlugin {
     private PrisonerManager pm;
     private ScoreBoardManager sbm;
     private MoveProtectionListener mpl;
-    private Update update;
     private boolean debug = false;
     private int updateCheckTask = -1;
 
@@ -123,7 +122,6 @@ public class JailMain extends JavaPlugin {
         sbm = new ScoreBoardManager(this);
         reloadJailPayManager();
         reloadJailSticks();
-        reloadUpdateCheck();
 
         new JailsAPI(this);
         debug("Took " + (System.currentTimeMillis() - st) + " to enable the plugin.");
@@ -144,7 +142,6 @@ public class JailMain extends JavaPlugin {
 
         getServer().getScheduler().cancelTasks(this);
 
-        update = null;
         jvm = null;
         jt = null;
         sbm = null;
@@ -235,8 +232,6 @@ public class JailMain extends JavaPlugin {
         reloadJailPayManager();
         //Reload the jail vote information and settings
         reloadJailVoteManager();
-        //Reload the update checking, to turn it on/off and/or change the channel
-        reloadUpdateCheck();
         //Let the rest of the plugin(s) know we have reloaded so they can do stuff
         //if they rely on any of the configuration settings (such as signs)
         getServer().getPluginManager().callEvent(new JailPluginReloadedEvent(this));
@@ -300,23 +295,6 @@ public class JailMain extends JavaPlugin {
         this.jvm = new JailVoteManager(this);
     }
 
-    /** Reloads the update checker, in case they changed a setting about it. */
-    private void reloadUpdateCheck() {
-        getServer().getScheduler().cancelTask(updateCheckTask);
-        update = new Update(this);
-        if(getConfig().getBoolean(Settings.UPDATENOTIFICATIONS.getPath())) {
-            try {
-                updateCheckTask = getServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
-                    public void run() {
-                        update.query();
-                    }
-                }, 80L, Util.getTime(getConfig().getString(Settings.UPDATETIME.getPath()), TimeUnit.SECONDS) * 20).getTaskId();
-            } catch (Exception e) {
-                e.printStackTrace();
-                getLogger().severe("Was unable to schedule the update checking, please check your time format is correct.");
-            }
-        }
-    }
 
     /** Gets the {@link HandCuffManager} instance. */
     public HandCuffManager getHandCuffManager() {
@@ -358,10 +336,6 @@ public class JailMain extends JavaPlugin {
         return this.jvm;
     }
 
-    /** Gets the {@link Update} instance.  */
-    public Update getUpdate() {
-        return this.update;
-    }
 
     /** Sets whether the plugin is in debugging or not. */
     public boolean setDebugging(boolean debug) {
